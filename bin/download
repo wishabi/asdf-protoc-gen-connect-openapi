@@ -1,16 +1,54 @@
 #!/usr/bin/env bash
+
+GH_REPO="https://github.com/sudorandom/protoc-gen-connect-openapi"
 TOOL_NAME="protoc-gen-connect-openapi"
 
-mkdir -p "$ASDF_INSTALL_PATH/bin"
+set -euo pipefail
 
-install_path="$ASDF_INSTALL_PATH/bin"
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
 
-echo "* Installing into: $install_path"
+mkdir -p "$ASDF_DOWNLOAD_PATH"
 
-cp "$ASDF_DOWNLOAD_PATH/$TOOL_NAME" $install_path
+# Determine OS and architecture.
+os=""
+arch=""
 
-test -x "$install_path/$TOOL_NAME" || echo "Expected blah to be executable."
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  os="darwin"
+  # We just provide a fat binary for MacOS that supports both architectures.
+  arch="all"
+else
+  # Handle other operating systems
+  case "$(uname -s)" in
+    Linux) os="linux" ;;
+    MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+    *) fail "Unsupported operating system: $(uname -s)" ;;
+  esac
+  
+  # Determine architecture for non-Darwin systems
+  case "$(uname -m)" in
+    x86_64) arch="amd64" ;;
+    arm64|aarch64) arch="arm64" ;;
+    i*86) arch="386" ;;
+    *) fail "Unsupported architecture: $(uname -m)" ;;
+  esac
+fi
 
-echo ""
-echo "Installation was successful!"
-echo "Be sure to add '$TOOL_NAME <version_name>' into your projects .tool_versions"
+# Build release file based on the goreleaser default location in github
+release_file="${TOOL_NAME}_${ASDF_INSTALL_VERSION}_${os}_${arch}.tar.gz"
+download_path="$ASDF_DOWNLOAD_PATH/$release_file"
+url="$GH_REPO/releases/download/v${ASDF_INSTALL_VERSION}/$release_file"
+
+echo "* Downloading from $url"
+curl -fsSL -L -o "$download_path" "$url" || fail "Could not download $url"
+
+if [ -f "$download_path" ]; then
+  echo "* Download successful: $(ls -lh "$download_path")"
+else
+  fail "Download seems to have failed. File not found at $download_path"
+fi
+
+# Extract contents of tar.gz file into the download directory
+echo "* Extracting into $ASDF_DOWNLOAD_PATH"
+tar -xzf "$download_path" -C "$ASDF_DOWNLOAD_PATH" || fail "Could not extract $release_file"
