@@ -6,11 +6,6 @@
 
 </div>
 
-# Contents
-
-- [Dependencies](#dependencies)
-- [Install](#install)
-
 # Dependencies
 
 If you want to contribute and test the scripts you quire having the following utilities
@@ -23,6 +18,18 @@ Adding the plugin:
 
 ```shell
 asdf plugin add protoc-gen-connect-openapi https://github.com/wishabi/asdf-protoc-gen-connect-openapi
+```
+
+# Updating
+
+```shell
+asdf plugin update protoc-gen-connect-openapi 
+```
+
+# Uninstall the plugin
+
+```shell
+asdf plugin uninstall protoc-gen-connect-openapi 
 ```
 
 protoc-gen-connect-openapi:
